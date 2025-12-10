@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game - Neon Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Game - Cross Platform</title>
     <style>
-        /* GIỮ NGUYÊN CSS NHƯ CŨ */
+        /* --- GIAO DIỆN CHUNG (PC & MOBILE) --- */
         body {
             background-color: #1a1a1a;
             color: white;
@@ -16,28 +16,42 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Chặn thanh cuộn */
+            touch-action: none; /* Chặn thao tác chạm mặc định */
         }
 
         h1 { margin: 10px 0; text-shadow: 0 0 10px #4dff4d; font-size: 2.5rem; }
-        
+
+        .score-board {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+        .score-val { color: #4dff4d; font-weight: bold; }
+
+        /* Khung chứa game */
         .game-container {
             position: relative;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
             border-radius: 10px;
         }
 
+        /* Canvas: Tự co giãn */
         canvas {
             background-color: #000;
             border: 2px solid #333;
             border-radius: 10px;
             display: block;
             box-shadow: 0 0 20px rgba(77, 255, 77, 0.2);
+            
+            /* Responsive: */
+            width: 95vw;       /* Chiếm 95% chiều rộng màn hình */
+            max-width: 400px;  /* Nhưng không quá 400px (kích thước PC) */
+            height: auto;      /* Tự tính chiều cao theo tỷ lệ */
+            aspect-ratio: 1/1; /* Luôn giữ hình vuông */
         }
 
-        .score-board { font-size: 1.5rem; margin-bottom: 10px; color: #ccc; }
-        .score-val { color: #4dff4d; font-weight: bold; }
-
+        /* Overlay (Game Over / Start) */
         #overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -47,20 +61,17 @@
             align-items: center;
             justify-content: center;
             border-radius: 10px;
-            visibility: visible;
-            opacity: 1;
-            transition: opacity 0.3s;
             z-index: 10;
         }
 
         #overlay h2 {
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: #ff4d4d;
             margin: 0 0 20px 0;
             text-shadow: 0 0 20px red;
         }
 
-        button {
+        button.start-btn {
             padding: 15px 30px;
             font-size: 1.2rem;
             background: #4dff4d;
@@ -69,14 +80,66 @@
             cursor: pointer;
             font-weight: bold;
             color: #000;
-            transition: transform 0.1s, box-shadow 0.1s;
             box-shadow: 0 0 15px #4dff4d;
+            transition: transform 0.1s;
         }
-
-        button:hover { transform: scale(1.05); box-shadow: 0 0 25px #4dff4d; }
-        button:active { transform: scale(0.95); }
+        button.start-btn:active { transform: scale(0.95); }
 
         .hidden { visibility: hidden !important; opacity: 0 !important; }
+
+        /* --- PHẦN ĐIỀU KHIỂN CHO MOBILE --- */
+        /* Mặc định ẩn trên PC */
+        .mobile-controls {
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            user-select: none;
+        }
+
+        .d-row { display: flex; gap: 15px; }
+
+        .d-btn {
+            width: 60px; height: 60px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid #555;
+            border-radius: 15px;
+            color: #4dff4d;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #222;
+            transition: background 0.1s;
+            touch-action: manipulation;
+        }
+
+        .d-btn:active {
+            background-color: #4dff4d;
+            color: #000;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #222;
+        }
+
+        /* --- QUY TẮC RESPONSIVE (MEDIA QUERY) --- */
+        /* Chỉ hiện nút điều khiển khi màn hình nhỏ hơn 800px (Điện thoại/Tablet) */
+        @media (max-width: 800px) {
+            .mobile-controls {
+                display: flex; /* Hiện nút */
+            }
+            /* Ẩn dòng hướng dẫn bàn phím trên điện thoại cho đỡ rối */
+            .pc-guide {
+                display: none;
+            }
+        }
+        
+        /* Chỉnh style hướng dẫn phím */
+        .pc-guide kbd {
+            background: #333; padding: 2px 6px; border-radius: 4px; border: 1px solid #777;
+        }
     </style>
 </head>
 <body>
@@ -88,11 +151,24 @@
         
         <div id="overlay">
             <h2 id="statusText" style="color: #4dff4d;">SNAKE GAME</h2>
-            <button onclick="startGame()" id="playBtn">Chơi Ngay</button>
+            <button onclick="startGame()" id="playBtn" class="start-btn">Chơi Ngay</button>
         </div>
     </div>
 
-    <p style="margin-top: 20px; color: #666;">Dùng phím Mũi Tên ⬆️⬇️⬅️➡️ để di chuyển</p>
+    <p class="pc-guide" style="margin-top: 15px; color: #888;">
+        Dùng phím <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>
+    </p>
+
+    <div class="mobile-controls">
+        <div class="d-row">
+            <div class="d-btn" id="btnUp">W</div>
+        </div>
+        <div class="d-row">
+            <div class="d-btn" id="btnLeft">A</div>
+            <div class="d-btn" id="btnDown">S</div>
+            <div class="d-btn" id="btnRight">D</div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -100,18 +176,16 @@
         const scoreEl = document.getElementById('score');
         const overlay = document.getElementById('overlay');
         const statusText = document.getElementById('statusText');
-        const playBtn = document.getElementById('playBtn'); // Lấy nút bấm
+        const playBtn = document.getElementById('playBtn');
 
+        // Logic game dựa trên lưới 20x20
         const tileCount = 20;
-        const tileSize = canvas.width / tileCount - 2;
+        const tileSize = 400 / tileCount - 2; 
         const speed = 7;
 
-        let headX = 10;
-        let headY = 10;
-        let dx = 0;
-        let dy = 0;
-        let appleX = 5;
-        let appleY = 5;
+        let headX = 10; let headY = 10;
+        let dx = 0; let dy = 0;
+        let appleX = 5; let appleY = 5;
         let tail = [];
         let tailLength = 2;
         let score = 0;
@@ -119,21 +193,16 @@
         let isRunning = false;
 
         function startGame() {
-            headX = 10;
-            headY = 10;
-            tail = [];
-            tailLength = 2;
-            score = 0;
-            dx = 0;
-            dy = 0;
+            headX = 10; headY = 10;
+            tail = []; tailLength = 2;
+            score = 0; dx = 0; dy = 0;
             scoreEl.innerText = score;
             isRunning = true;
             
-            // Đặt lại chữ khi bắt đầu game mới (phòng khi người chơi F5)
             statusText.innerText = "SNAKE GAME";
             statusText.style.color = "#4dff4d";
-
             overlay.classList.add('hidden');
+            
             generateApple();
 
             if (gameLoop) clearInterval(gameLoop);
@@ -145,8 +214,7 @@
 
             changeSnakePosition();
             
-            let result = isGameOver();
-            if (result) {
+            if (isGameOver()) {
                 gameOverScreen();
                 return;
             }
@@ -158,36 +226,21 @@
         }
 
         function isGameOver() {
-            let gameOver = false;
-
-            // FIX LỖI 1: Nếu rắn chưa di chuyển (vừa ấn Start), không kiểm tra Game Over
-            if (dx === 0 && dy === 0) {
-                return false;
-            }
-
+            if (dx === 0 && dy === 0) return false;
             // Chạm tường
-            if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) {
-                gameOver = true;
-            }
-
+            if (headX < 0 || headX >= tileCount || headY < 0 || headY >= tileCount) return true;
             // Cắn đuôi
             for (let i = 0; i < tail.length; i++) {
-                if (tail[i].x === headX && tail[i].y === headY) {
-                    gameOver = true;
-                    break;
-                }
+                if (tail[i].x === headX && tail[i].y === headY) return true;
             }
-            return gameOver;
+            return false;
         }
 
         function gameOverScreen() {
             isRunning = false;
             statusText.innerText = "GAME OVER";
             statusText.style.color = "#ff4d4d";
-            
-            // FIX LỖI 2: Đổi chữ nút bấm thành "Chơi Lại"
             playBtn.innerText = "Chơi Lại";
-            
             overlay.classList.remove('hidden');
             clearInterval(gameLoop);
         }
@@ -204,34 +257,30 @@
                 ctx.fillStyle = i === tail.length - 1 ? '#4dff4d' : `rgb(0, ${colorVal}, 0)`; 
                 
                 if (i === tail.length - 1) {
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = "#4dff4d";
+                    ctx.shadowBlur = 15; ctx.shadowColor = "#4dff4d";
                 } else {
                     ctx.shadowBlur = 0;
                 }
-                ctx.fillRect(tail[i].x * (canvas.width / tileCount), tail[i].y * (canvas.width / tileCount), tileSize, tileSize);
+                // Tính toán vị trí dựa trên tỷ lệ canvas 400px
+                ctx.fillRect(tail[i].x * (400 / tileCount), tail[i].y * (400 / tileCount), tileSize, tileSize);
             }
             ctx.shadowBlur = 0;
 
             tail.push({ x: headX, y: headY });
-            while (tail.length > tailLength) {
-                tail.shift();
-            }
+            while (tail.length > tailLength) tail.shift();
         }
 
         function drawApple() {
             ctx.fillStyle = "#ff3333";
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "red";
-            let x = appleX * (canvas.width / tileCount);
-            let y = appleY * (canvas.width / tileCount);
+            ctx.shadowBlur = 15; ctx.shadowColor = "red";
+            let x = appleX * (400 / tileCount);
+            let y = appleY * (400 / tileCount);
             ctx.fillRect(x, y, tileSize, tileSize);
             ctx.shadowBlur = 0;
         }
 
         function changeSnakePosition() {
-            headX = headX + dx;
-            headY = headY + dy;
+            headX += dx; headY += dy;
         }
 
         function checkAppleCollision() {
@@ -248,39 +297,46 @@
             appleX = Math.floor(Math.random() * tileCount);
             appleY = Math.floor(Math.random() * tileCount);
             for(let t of tail) {
-                if(t.x === appleX && t.y === appleY) {
-                    generateApple();
-                    break;
-                }
+                if(t.x === appleX && t.y === appleY) { generateApple(); break; }
             }
         }
 
-        document.body.addEventListener('keydown', keyDown);
-
-        function keyDown(event) {
-            // Ngăn cuộn trang
-            if([37, 38, 39, 40].indexOf(event.keyCode) > -1) {
-                event.preventDefault();
-            }
-
-            // Xử lý mũi tên
-            if (event.keyCode == 38) { // Lên
-                if (dy == 1) return;
-                dy = -1; dx = 0;
-            }
-            if (event.keyCode == 40) { // Xuống
-                if (dy == -1) return;
-                dy = 1; dx = 0;
-            }
-            if (event.keyCode == 37) { // Trái
-                if (dx == 1) return;
-                dy = 0; dx = -1;
-            }
-            if (event.keyCode == 39) { // Phải
-                if (dx == -1) return;
-                dy = 0; dx = 1;
-            }
+        // --- XỬ LÝ ĐIỀU KHIỂN (HỢP NHẤT) ---
+        function setDirection(dir) {
+            if (dir === 'UP' && dy !== 1) { dy = -1; dx = 0; }
+            if (dir === 'DOWN' && dy !== -1) { dy = 1; dx = 0; }
+            if (dir === 'LEFT' && dx !== 1) { dy = 0; dx = -1; }
+            if (dir === 'RIGHT' && dx !== -1) { dy = 0; dx = 1; }
         }
+
+        // 1. Bàn phím PC (WASD)
+        document.body.addEventListener('keydown', (e) => {
+            // W=87, A=65, S=83, D=68
+            if (e.keyCode === 87) setDirection('UP');
+            if (e.keyCode === 83) setDirection('DOWN');
+            if (e.keyCode === 65) setDirection('LEFT');
+            if (e.keyCode === 68) setDirection('RIGHT');
+        });
+
+        // 2. Nút bấm Mobile (Touch)
+        const btnMap = {
+            'btnUp': 'UP', 'btnDown': 'DOWN', 
+            'btnLeft': 'LEFT', 'btnRight': 'RIGHT'
+        };
+
+        Object.keys(btnMap).forEach(id => {
+            const elem = document.getElementById(id);
+            // Dùng touchstart để phản hồi nhanh trên đt
+            elem.addEventListener('touchstart', (e) => {
+                e.preventDefault(); 
+                setDirection(btnMap[id]);
+            }, { passive: false });
+            // Dùng mousedown để test được bằng chuột trên PC
+            elem.addEventListener('mousedown', (e) => {
+                setDirection(btnMap[id]);
+            });
+        });
+
     </script>
 </body>
 </html>
