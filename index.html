@@ -3,34 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snake Game</title>
+    <title>Neon Snake</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="score-board">Score: <span id="score" class="score-val">0</span></div>
+    <h1 class="neon-title">NEON SNAKE</h1>
+    <div class="score-board">
+        Score: <span id="score" class="score-val">0</span> | 
+        High Score: <span id="highScore" class="score-val">0</span>
+    </div>
 
     <div class="game-container">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
         
         <div id="overlay">
-            <h2 id="statusText" class="status-title">SNAKE GAME</h2>
+            <h2 id="statusText" class="status-title">NEON SNAKE</h2>
             <button id="playBtn" class="start-btn">Play Now</button>
         </div>
     </div>
 
-    <p class="pc-guide">Use <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></p>
-
-    <div class="mobile-controls">
-        <div class="d-row">
-            <div class="d-btn" id="btnUp">W</div>
-        </div>
-        <div class="d-row">
-            <div class="d-btn" id="btnLeft">A</div>
-            <div class="d-btn" id="btnDown">S</div>
-            <div class="d-btn" id="btnRight">D</div>
-        </div>
-    </div>
+    <p class="pc-guide">Use <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or Arrows</p>
 
     <script src="script.js"></script>
 </body>
