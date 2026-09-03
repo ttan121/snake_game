@@ -1,30 +1,121 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Snake</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>Slither.io Neon Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Fullscreen Canvas Rendering Surface -->
+    <canvas id="gameCanvas"></canvas>
 
-    <h1 class="neon-title">NEON SNAKE</h1>
-    <div class="score-board">
-        Score: <span id="score" class="score-val">0</span> | 
-        High Score: <span id="highScore" class="score-val">0</span>
-    </div>
+    <!-- In-Game HUD Overlay (pointer-events pass through except on interactive cards) -->
+    <div id="hud" class="hud-overlay hidden">
+        <!-- Top Left: Stats Panel -->
+        <div id="stats-panel" class="glass-card">
+            <div class="stat-item"><span class="stat-label">MASS</span> <span id="hud-mass" class="stat-val neon-cyan">20</span></div>
+            <div class="stat-item"><span class="stat-label">SCORE</span> <span id="hud-score" class="stat-val neon-yellow">200</span></div>
+            <div class="stat-item"><span class="stat-label">RANK</span> <span id="hud-rank" class="stat-val neon-magenta">#1</span><span class="stat-sub">/<span id="hud-total-bots">1</span></span></div>
+            <div class="stat-item"><span class="stat-label">FPS</span> <span id="hud-fps" class="stat-val neon-green">60</span></div>
+        </div>
 
-    <div class="game-container">
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        
-        <div id="overlay">
-            <h2 id="statusText" class="status-title">NEON SNAKE</h2>
-            <button id="playBtn" class="start-btn">Play Now</button>
+        <!-- Top Right: Live Leaderboard -->
+        <div id="leaderboard" class="glass-card">
+            <div class="leaderboard-header">
+                <span class="leaderboard-icon">⚡</span>
+                <h3 class="leaderboard-title">LEADERBOARD</h3>
+            </div>
+            <ol id="leaderboard-list">
+                <li class="leaderboard-item self"><span class="rank">1.</span> <span class="name">CyberViper</span> <span class="score">200</span></li>
+            </ol>
+        </div>
+
+        <!-- Bottom Left: Vector Radar Minimap -->
+        <div id="minimap-container" class="glass-card">
+            <canvas id="minimapCanvas" width="160" height="160"></canvas>
         </div>
     </div>
 
-    <p class="pc-guide">Use <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or Arrows</p>
+    <!-- Start Screen Modal -->
+    <div id="start-screen" class="modal-overlay">
+        <div class="modal-card">
+            <div class="logo-wrapper">
+                <h1 class="neon-title glow-pulse">SLITHER<span class="neon-magenta">.IO</span></h1>
+                <p class="subtitle">NEON CYBER ARENA</p>
+            </div>
+
+            <div class="input-group">
+                <label for="nickname-input" class="input-label">PILOT ALIAS</label>
+                <input type="text" id="nickname-input" maxlength="16" placeholder="ENTER NICKNAME" spellcheck="false" autocomplete="off" value="CyberViper">
+            </div>
+
+            <!-- Skin Color Selector Carousel -->
+            <div class="skin-selector">
+                <button id="prev-skin-btn" class="nav-btn" aria-label="Previous Skin">&lt;</button>
+                <div id="skin-preview-container">
+                    <canvas id="skinPreviewCanvas" width="140" height="60"></canvas>
+                    <span id="skin-name" class="neon-cyan">CYAN PULSE</span>
+                </div>
+                <button id="next-skin-btn" class="nav-btn" aria-label="Next Skin">&gt;</button>
+            </div>
+
+            <button id="play-btn" class="glow-btn">ENTER ARENA</button>
+
+            <div class="controls-guide">
+                <div class="guide-item"><span><kbd>MOUSE</kbd></span> Direct Steering</div>
+                <div class="guide-item"><span><kbd>L-CLICK</kbd> / <kbd>SPACE</kbd></span> Turbo Boost</div>
+                <div class="guide-item"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> Keyboard Steering</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen Modal -->
+    <div id="gameover-screen" class="modal-overlay hidden">
+        <div class="modal-card gameover-card">
+            <h2 class="gameover-title neon-magenta glow-pulse">SYSTEM TERMINATED</h2>
+            <p class="gameover-subtitle">CONNECTION SEVERED</p>
+
+            <div class="summary-stats">
+                <div class="summary-row">
+                    <span class="summary-label">FINAL MASS</span>
+                    <span id="summary-mass" class="summary-val neon-cyan">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">FINAL SCORE</span>
+                    <span id="summary-score" class="summary-val neon-yellow">0</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">HIGHEST RANK</span>
+                    <span id="summary-rank" class="summary-val neon-magenta">#1</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">SURVIVAL TIME</span>
+                    <span id="summary-time" class="summary-val neon-green">00:00</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">KILLS</span>
+                    <span id="summary-kills" class="summary-val neon-yellow">0</span>
+                </div>
+            </div>
+
+            <button id="restart-btn" class="glow-btn">RE-ENTER ARENA</button>
+        </div>
+    </div>
+
+    <!-- Mobile Virtual Joystick & Boost Button Overlay -->
+    <div id="touch-controls" class="touch-layer hidden">
+        <div id="joystick-base" class="hidden">
+            <div id="joystick-thumb"></div>
+        </div>
+        <button id="mobile-boost-btn" class="mobile-boost" aria-label="Speed Boost">
+            <div class="boost-icon">⚡</div>
+            <span class="boost-label">BOOST</span>
+        </button>
+    </div>
 
     <script src="script.js"></script>
 </body>
